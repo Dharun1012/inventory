@@ -1,0 +1,17 @@
+# Python & Flask ignores
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+instance/
+.env
+.DS_Store
+*.log
+*.sqlite3
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.idea/
+.vscode/

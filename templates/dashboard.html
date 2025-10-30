@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4 page-title"><i class="fas fa-chart-line"></i> Dashboard Overview</h2>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-content">
+                <h5>Total Products</h5>
+                <h2>{{ total_products }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="stat-content">
+                <h5>Total Locations</h5>
+                <h2>{{ total_locations }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="stat-content">
+                <h5>Total Movements</h5>
+                <h2>{{ total_movements }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Total Stock by Product</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="totalStockChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Stock Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if low_stock %}
+<div class="card alert-card">
+    <div class="card-header alert-header">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Low Stock Alerts</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover custom-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Current Stock</th>
+                        <th>Minimum Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in low_stock %}
+                    <tr>
+                        <td><strong>{{ item.product }}</strong></td>
+                        <td><span class="stock-badge stock-low">{{ item.stock }}</span></td>
+                        <td>{{ item.min }}</td>
+                        <td><span class="badge-danger-custom">Critical</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success-custom">
+    <i class="fas fa-check-circle"></i> All products are adequately stocked!
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    // Total Stock Chart
+    const totalStockCtx = document.getElementById('totalStockChart').getContext('2d');
+    const totalStockData = {{ total_stock | tojson }};
+    
+    new Chart(totalStockCtx, {
+        type: 'bar',
+        data: {
+            labels: totalStockData.map(item => item.product),
+            datasets: [{
+                label: 'Total Stock',
+                data: totalStockData.map(item => item.total),
+                backgroundColor: ['#2C3E50', '#E67E22', '#3498DB'],
+                borderColor: ['#1A252F', '#D35400', '#2980B9'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Distribution Chart
+    const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+    
+    new Chart(distributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: totalStockData.map(item => item.product),
+            datasets: [{
+                data: totalStockData.map(item => item.total),
+                backgroundColor: ['#2C3E50', '#E67E22', '#3498DB'],
+                borderColor: '#fff',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            size: 13
+                        },
+                        padding: 15
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

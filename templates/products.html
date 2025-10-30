@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-box"></i> Products</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="fas fa-plus"></i> Add Product
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Total Quantity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.product_id }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.description }}</td>
+                        <td>
+                            <span class="badge {% if product.total_qty <= 10 %}bg-danger{% elif product.total_qty <= 20 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                {{ product.total_qty }}
+                            </span>
+                            <button class="btn btn-sm btn-link" onclick="showLocationBreakdown('{{ product.product_id }}', '{{ product.name }}')">
+                                <i class="fas fa-info-circle"></i> View by location
+                            </button>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" 
+                                    onclick="editProduct('{{ product.product_id }}', '{{ product.name }}', '{{ product.description }}', {{ product.total_qty }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('{{ product.product_id }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="add">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-control" name="description">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Initial Quantity</label>
+                        <input type="number" class="form-control" name="qty" value="0" required min="0">
+                    </div>
+                    <div class="alert alert-info">
+                        <small><i class="fas fa-info-circle"></i> Product will be added to Main Warehouse (WH001)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal fade" id="editModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="product_id" id="edit_product_id">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" id="edit_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-control" name="description" id="edit_description">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Total Quantity (across all locations)</label>
+                        <input type="number" class="form-control" name="qty" id="edit_qty" required min="0">
+                    </div>
+                    <div class="alert alert-warning">
+                        <small><i class="fas fa-exclamation-triangle"></i> Adjusting quantity will add/remove stock from Main Warehouse (WH001)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Location Breakdown Modal -->
+<div class="modal fade" id="locationModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalTitle">Stock by Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="locationModalBody">
+                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form -->
+<form method="POST" id="deleteForm" style="display:none;">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="product_id" id="delete_product_id">
+</form>
+
+<script>
+function editProduct(id, name, description, qty) {
+    document.getElementById('edit_product_id').value = id;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_description').value = description;
+    document.getElementById('edit_qty').value = qty;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+function deleteProduct(id) {
+    if (confirm('Are you sure you want to delete this product and all related movements?')) {
+        document.getElementById('delete_product_id').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+
+function showLocationBreakdown(productId, productName) {
+    document.getElementById('locationModalTitle').textContent = `${productName} - Stock by Location`;
+    document.getElementById('locationModalBody').innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+    
+    fetch(`/api/product-locations/${productId}`)
+        .then(response => response.json())
+        .then(data => {
+            let html = '<table class="table table-sm"><thead><tr><th>Location</th><th>Quantity</th></tr></thead><tbody>';
+            
+            if (data.locations.length === 0) {
+                html += '<tr><td colspan="2" class="text-center text-muted">No stock at any location</td></tr>';
+            } else {
+                data.locations.forEach(loc => {
+                    let badgeClass = loc.qty <= 5 ? 'bg-danger' : loc.qty <= 10 ? 'bg-warning text-dark' : 'bg-success';
+                    html += `<tr><td>${loc.location}</td><td><span class="badge ${badgeClass}">${loc.qty}</span></td></tr>`;
+                });
+            }
+            
+            html += '</tbody></table>';
+            document.getElementById('locationModalBody').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('locationModalBody').innerHTML = '<p class="text-danger">Error loading data</p>';
+        });
+    
+    new bootstrap.Modal(document.getElementById('locationModal')).show();
+}
+</script>
+{% endblock %}

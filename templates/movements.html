@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-exchange-alt"></i> Product Movements</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="fas fa-plus"></i> Add Movement
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp</th>
+                        <th>Product</th>
+                        <th>From Location</th>
+                        <th>To Location</th>
+                        <th>Quantity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movement in movements %}
+                    <tr>
+                        <td>{{ movement.movement_id }}</td>
+                        <td>{{ movement.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ movement.product.name if movement.product else movement.product_id }}</td>
+                        <td>{{ movement.from_location_obj.name if movement.from_location_obj else '-' }}</td>
+                        <td>{{ movement.to_location_obj.name if movement.to_location_obj else '-' }}</td>
+                        <td>{{ movement.qty }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteMovement({{ movement.movement_id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Movement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="add">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Product</label>
+                        <select class="form-select" name="product_id" required>
+                            <option value="">Select Product</option>
+                            {% for product in products %}
+                            <option value="{{ product.product_id }}">{{ product.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">From Location (leave blank for incoming stock)</label>
+                        <select class="form-select" name="from_location">
+                            <option value="">None (Incoming)</option>
+                            {% for location in locations %}
+                            <option value="{{ location.location_id }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">To Location (leave blank for outgoing stock)</label>
+                        <select class="form-select" name="to_location">
+                            <option value="">None (Outgoing)</option>
+                            {% for location in locations %}
+                            <option value="{{ location.location_id }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" name="qty" required min="1">
+                    </div>
+
+                    <div class="alert alert-info">
+                        <small><i class="fas fa-info-circle"></i> Fill either From or To location, or both for transfers.</small>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Movement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form -->
+<form method="POST" id="deleteForm" style="display: none;">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="movement_id" id="delete_movement_id">
+</form>
+
+<script>
+function deleteMovement(id) {
+    if (confirm('Are you sure you want to delete this movement?')) {
+        document.getElementById('delete_movement_id').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}
