@@ -1,0 +1,8 @@
+Flask==2.3.3
+Flask-Login==0.6.2
+Flask-SQLAlchemy==3.0.5
+Werkzeug==2.3.7
+SQLAlchemy==2.0.20
+reportlab==4.0.4
+matplotlib==3.8.0 # for generating charts if used
+pandas==2.1.1 # for report or data processing
